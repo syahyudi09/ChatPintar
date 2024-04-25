@@ -12,7 +12,7 @@ import (
 
 type AuthController struct {
 	router  *gin.Engine
-	auth usecase.AuthUsecase
+	usecase usecase.AuthUsecase
 }
 
 func (ac *AuthController) Register(c *gin.Context) {
@@ -26,7 +26,7 @@ func (ac *AuthController) Register(c *gin.Context) {
 		return
 	}
 
-	exists, err := ac.auth.PhoneNumberExits(input.PhoneNumber)
+	exists, err := ac.usecase.PhoneNumberExits(input.PhoneNumber)
 	if err != nil {
 		fmt.Println(err)
 		errorMessage := gin.H{"errors": "FAILED_TO_CHECK_PHONENUMBER_EXISTENCE"}
@@ -43,7 +43,7 @@ func (ac *AuthController) Register(c *gin.Context) {
 		message = "PHONE_NUMBER_ALREADY_EXISTS"
 	} else {
 		// Jika pendaftaran berhasil, respons akan menampilkan pesan sukses dan data pengguna yang terdafta
-		if err := ac.auth.Register(input); err != nil {
+		if err := ac.usecase.Register(input); err != nil {
 			fmt.Println(err)
 			response := helper.APIResponse("FAILED_TO_REGISTER_USER", http.StatusBadRequest, "error", nil)
 			c.JSON(http.StatusBadRequest, response)
@@ -56,15 +56,40 @@ func (ac *AuthController) Register(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func (ac *AuthController) Login(c *gin.Context) {
+	var input model.UserInputLogin
+	if err := c.ShouldBindJSON(&input); err != nil {
+		errorMessage := gin.H{"ERRORS": "INVALID_JSON_FORMAT"}
+		response := helper.APIResponse("LOGIN_FAILED", http.StatusBadRequest, "ERROR", errorMessage)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	result, err := ac.usecase.Login(input)
+	if err != nil {
+
+		// Jika terjadi kesalahan saat proses login, fungsi akan memberikan respons dengan kesalahan tersebut.
+		fmt.Println("err on ac .usecase.LoginUser(input)", err)
+		errorMessage := gin.H{"ERRORS": "LOGIN_FAILED"}
+		response := helper.APIResponse("LOGIN_FAILED", http.StatusBadRequest, "ERROR", errorMessage)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+	// Jika proses login berhasil, fungsi akan memberikan respons dengan pesan sukses dan data pengguna yang berhasil login.
+	response := helper.APIResponse("SUCCESSFULLY_LOGIN", http.StatusOK, "success", result)
+	c.JSON(http.StatusOK, response)
+}
+
 func NewAuthController(r *gin.Engine, usecase usecase.AuthUsecase) *AuthController {
 	controller := AuthController{
 		router:  r,
-		auth: usecase,
+		usecase: usecase,
 	}
 
 	auth := r.Group("/auth")
 
 	auth.POST("/register", controller.Register)
+	auth.POST("/login",controller.Login)
 
 	return &controller
 } 

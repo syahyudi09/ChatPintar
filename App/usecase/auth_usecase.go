@@ -7,11 +7,14 @@ import (
 	"github.com/syahyudi09/ChatPintar/App/model"
 	"github.com/syahyudi09/ChatPintar/App/repository"
 	"github.com/syahyudi09/ChatPintar/App/utils"
+	"github.com/syahyudi09/ChatPintar/App/utils/token"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthUsecase interface {
-	Register(input model.UserInput) error 
+	Register(input model.UserInput) error
 	PhoneNumberExits(PhoneNumber string) (bool, error)
+	Login(input model.UserInputLogin) (model.UserFormatter, error)
 }
 
 type authUsecase struct {
@@ -24,7 +27,7 @@ func (au *authUsecase) Register(input model.UserInput) error {
 	user.Name = input.Name
 	user.PhoneNumber = input.PhoneNumber
 	user.CreatedAt = time.Now()
-	hashedPassword, err := utils.HashPassword(user.Password)
+	hashedPassword, err := utils.HashPassword(input.Password)
 	if err != nil {
 		return fmt.Errorf("err %w", err)
 	}
@@ -34,6 +37,42 @@ func (au *authUsecase) Register(input model.UserInput) error {
 
 func (au *authUsecase) PhoneNumberExits(PhoneNumber string) (bool, error) {
 	return au.repository.CheckPhoneNumber(PhoneNumber)
+}
+
+func (au *authUsecase) Login(input model.UserInputLogin) (model.UserFormatter, error) {
+	phoneNumber := input.PhoneNumber
+	password := input.Password
+
+	user, err := au.repository.FindByPhoneNumber(phoneNumber)
+	if err != nil {
+		return model.UserFormatter{}, fmt.Errorf("Phone Number Not Found")
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
+		fmt.Println(err)
+		return model.UserFormatter{}, fmt.Errorf("invalid password")
+	}
+
+	accessToken, err := token.GenerateToken(user.UserId, user.PhoneNumber)
+	if err != nil {
+		return model.UserFormatter{}, fmt.Errorf("failed to generate token: %w", err)
+	}
+
+	refreshToken, err := token.GenerateRefreshToken(user.UserId, phoneNumber)
+	if err != nil {
+		return model.UserFormatter{}, fmt.Errorf("failed to generate token: %w", err)
+	}
+
+	formatter := model.UserFormatter{
+		ID:           user.UserId,
+		Name:         user.Name,
+		PhoneNumber:  user.PhoneNumber,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}
+
+	return formatter, nil
 }
 
 func NewAuthUsecase(repository repository.AuthRepository) AuthUsecase {

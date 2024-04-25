@@ -15,3 +15,16 @@ type UserInput struct {
 	PhoneNumber string `json:"phone_number" validate:"required,max=11"`
 	Password    string `json:"password" validate:"required,min=8"`
 }
+
+type UserInputLogin struct {
+	PhoneNumber string `json:"phone_number" validate:"required,max=11"`
+	Password    string `json:"password" validate:"required,min=8"`
+}
+
+type UserFormatter struct {
+	ID           string
+	Name         string
+	PhoneNumber string
+	AccessToken  string
+	RefreshToken string
+}

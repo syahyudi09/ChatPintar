@@ -3,9 +3,9 @@ package middleware
 import (
 	"net/http"
 
-
 	"github.com/gin-gonic/gin"
-)
+	"github.com/syahyudi09/ChatPintar/App/utils/token"
+) 
 
 func JwtAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {

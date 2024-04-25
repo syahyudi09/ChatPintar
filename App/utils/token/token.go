@@ -17,13 +17,13 @@ const (
 )
 
 // GenerateToken menghasilkan token akses JWT.
-func GenerateToken(userID, userRole string) (string, error) {
+func GenerateToken(userID, phoneNumber string) (string, error) {
 	expirationTime := time.Now().Add(AccessTokenLifetime).Unix()
 
 	claims := jwt.MapClaims{
 		"authorized": true,
 		"user_id":    userID,
-		"user_role":  userRole,
+		"phone_number":  phoneNumber,
 		"exp":        expirationTime,
 	}
 
