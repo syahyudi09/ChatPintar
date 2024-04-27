@@ -8,14 +8,17 @@ import (
 
 type UseceaseManager interface {
 	GetAuthUsecase() usecase.AuthUsecase
+	GetPrivateUsecase() usecase.PrivateChatUsecase
 }
 
 type usecaseManager struct {
 	rm              RepositoryManager
 	authUsecase     usecase.AuthUsecase
+	privateChatUsecase usecase.PrivateChatUsecase
 }
 
 var onceLoadAuthUsecase sync.Once
+var onceLoadPrivateChatUsecase sync.Once
 
 func (um *usecaseManager) GetAuthUsecase() usecase.AuthUsecase {
 	onceLoadAuthUsecase.Do(func() {
@@ -24,6 +27,16 @@ func (um *usecaseManager) GetAuthUsecase() usecase.AuthUsecase {
 		)
 	})
 	return um.authUsecase
+}
+
+func (um *usecaseManager) GetPrivateUsecase() usecase.PrivateChatUsecase{
+	onceLoadPrivateChatUsecase.Do(func() {
+		um.privateChatUsecase = usecase.NewPrivateChatUsecase(
+			um.rm.GetPrivateRepo(),
+			um.rm.GetAuthRepo(),
+		)
+	})
+	return um.privateChatUsecase
 }
 
 func NewUsecaseManager(rm RepositoryManager) UseceaseManager {

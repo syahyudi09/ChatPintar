@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Chat 1-on-1</title>
+    <script>
+        let ws;
+
+        function connect() {
+            // Membuat koneksi WebSocket ke server
+            ws = new WebSocket(`ws://localhost:8080/ws?user_id=111c0877-8dcd-493c-890f-573937c88fe7`);
+            
+            ws.onopen = function () {
+                console.log("WebSocket connected");
+                document.getElementById("status").textContent = "Connected";
+            };
+            
+            ws.onmessage = function (event) {
+                const message = event.data;
+                // Menampilkan pesan yang diterima
+                const messageList = document.getElementById("message-list");
+                const listItem = document.createElement("li");
+                listItem.textContent = message;
+                messageList.appendChild(listItem);
+            };
+            
+            ws.onerror = function (error) {
+                console.error("WebSocket error:", error);
+                document.getElementById("status").textContent = "Error";
+            };
+
+            ws.onclose = function () {
+                console.log("WebSocket closed");
+                document.getElementById("status").textContent = "Disconnected";
+            };
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById("message-input");
+            const messageText = messageInput.value;
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                // Mengirim pesan dengan JSON termasuk ID penerima
+                const message = {
+                    sender_id: "111c0877-8dcd-493c-890f-573937c88fe7",
+                    receiver_id: "95623bc1-0d00-4ba7-8701-2d463ff1db72",
+                    message: messageText
+                };
+
+                ws.send(JSON.stringify(message));
+                messageInput.value = ""; // Bersihkan input setelah mengirim
+            } else {
+                alert("WebSocket connection is not open.");
+            }
+        }
+    </script>
+</head>
+<body onload="connect()">
+    <h1>WebSocket Chat 1-on-1</h1>
+    <p>Status: <span id="status">Connecting...</span></p>
+    
+    <ul id="message-list"></ul> <!-- Daftar pesan yang diterima -->
+    
+    <input type="text" id="message-input" placeholder="Enter your message..." />
+    <button onclick="sendMessage()">Send</button> <!-- Tombol untuk mengirim pesan -->
+</body>
+</html>

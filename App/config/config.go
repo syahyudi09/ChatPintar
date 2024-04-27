@@ -2,8 +2,10 @@ package config
 
 import (
 	"errors"
+	"net/http"
 	"os"
 
+	"github.com/gorilla/websocket"
 	"github.com/syahyudi09/ChatPintar/App/utils/common"
 )
 
@@ -51,4 +53,13 @@ func NewConfig() (Config, error) {
 		return Config{}, err
 	}
 	return cfg, nil
+}
+
+var WebSocketConfig = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		// Sesuaikan aturan CORS di sini
+		return true
+	},
 }

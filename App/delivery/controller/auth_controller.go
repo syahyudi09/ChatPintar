@@ -75,6 +75,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, response)
 		return
 	}
+
 	// Jika proses login berhasil, fungsi akan memberikan respons dengan pesan sukses dan data pengguna yang berhasil login.
 	response := helper.APIResponse("SUCCESSFULLY_LOGIN", http.StatusOK, "success", result)
 	c.JSON(http.StatusOK, response)

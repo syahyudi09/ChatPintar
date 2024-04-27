@@ -15,6 +15,7 @@ type AuthUsecase interface {
 	Register(input model.UserInput) error
 	PhoneNumberExits(PhoneNumber string) (bool, error)
 	Login(input model.UserInputLogin) (model.UserFormatter, error)
+	FindByUserId(UserId string) (model.UserModel, error)
 }
 
 type authUsecase struct {
@@ -39,13 +40,21 @@ func (au *authUsecase) PhoneNumberExits(PhoneNumber string) (bool, error) {
 	return au.repository.CheckPhoneNumber(PhoneNumber)
 }
 
+func (au *authUsecase) FindByUserId(UserId string) (model.UserModel, error) {
+	user, err := au.repository.FindByPhoneNumber(UserId)
+	if err != nil {
+		return model.UserModel{}, fmt.Errorf("phone number not found")
+	}
+	return user, nil
+}
+
 func (au *authUsecase) Login(input model.UserInputLogin) (model.UserFormatter, error) {
 	phoneNumber := input.PhoneNumber
 	password := input.Password
 
 	user, err := au.repository.FindByPhoneNumber(phoneNumber)
 	if err != nil {
-		return model.UserFormatter{}, fmt.Errorf("Phone Number Not Found")
+		return model.UserFormatter{}, fmt.Errorf("phone number not found")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
@@ -59,17 +68,11 @@ func (au *authUsecase) Login(input model.UserInputLogin) (model.UserFormatter, e
 		return model.UserFormatter{}, fmt.Errorf("failed to generate token: %w", err)
 	}
 
-	refreshToken, err := token.GenerateRefreshToken(user.UserId, phoneNumber)
-	if err != nil {
-		return model.UserFormatter{}, fmt.Errorf("failed to generate token: %w", err)
-	}
-
 	formatter := model.UserFormatter{
 		ID:           user.UserId,
 		Name:         user.Name,
 		PhoneNumber:  user.PhoneNumber,
 		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
 	}
 
 	return formatter, nil

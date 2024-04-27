@@ -11,6 +11,7 @@ type AuthRepository interface {
 	Register(newUser model.UserModel) error
 	CheckPhoneNumber(PhoneNumber string) (bool, error)
 	FindByPhoneNumber(PhoneNumber string) (model.UserModel , error) 
+	FindByUserId(UserId string) (model.UserModel , error)
 }
 
 type authRepository struct {
@@ -42,6 +43,18 @@ func (ar *authRepository) FindByPhoneNumber(PhoneNumber string) (model.UserModel
 	getQuery := "SELECT user_id, name, phone_number, password FROM users WHERE phone_number = $1"
 
 	row := ar.db.QueryRow(getQuery, PhoneNumber)
+	var user model.UserModel 
+	err := row.Scan(&user.UserId, &user.Name, &user.PhoneNumber, &user.Password)
+	if err != nil {
+		return user, fmt.Errorf("error on authRepository.FindByPhoneNumber : %w", err)
+	}
+	return user, nil
+}
+
+func (ar *authRepository) FindByUserId(UserId string) (model.UserModel , error) {
+	getQuery := "SELECT user_id, name, phone_number, password FROM users WHERE phone_number = $1"
+
+	row := ar.db.QueryRow(getQuery, UserId)
 	var user model.UserModel 
 	err := row.Scan(&user.UserId, &user.Name, &user.PhoneNumber, &user.Password)
 	if err != nil {

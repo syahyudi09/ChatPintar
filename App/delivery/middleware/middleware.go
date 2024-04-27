@@ -2,45 +2,39 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/syahyudi09/ChatPintar/App/utils/token"
-) 
+)
 
-func JwtAuthMiddleware() gin.HandlerFunc {
+// JWTMiddleware memvalidasi token JWT dan menambahkan klaim ke konteks Gin
+
+func JWTMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		err := token.TokenValid(c)
-		if err != nil {
-			var errorMessage string
-			switch err.Error() {
-			case "TOKEN_EXPIRED":
-				errorMessage = "Access token expired"
-			case "INVALID_TOKEN":
-				errorMessage = "Invalid access token"
-			default:
-				errorMessage = "Access token invalid"
-			}
+		authHeader := c.GetHeader("Authorization")
 
-			// Set metadata error_message dengan pesan kesalahan
-			c.Set("error_message", errorMessage)
-			
-			// Menyiapkan data JSON menggunakan gin.H
-			responseData := gin.H{
-				"status":  "error",
-				"code":    http.StatusUnauthorized,
-				"message": "ACCESS_TOKEN_INVALID",
-				"error":   errorMessage,
-			}
-			
-			// Mengirim respons JSON
-			c.JSON(http.StatusUnauthorized, responseData)
-			
-			// Menghentikan eksekusi selanjutnya
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token is required"})
+			c.Abort() // Menghentikan eksekusi lebih lanjut
+			return
+		}
+
+		// Menghilangkan prefiks "Bearer "
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+		// Memvalidasi token
+		claims, err := token.ValidateToken(tokenString) 
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token", "details": err.Error()})
 			c.Abort()
 			return
 		}
 
-		// Lanjutkan jika token valid
+		// Menyimpan klaim dalam konteks Gin
+		c.Set("claims", claims)
+
+		// Lanjutkan ke rute berikutnya
 		c.Next()
 	}
 }

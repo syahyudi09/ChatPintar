@@ -20,6 +20,7 @@ type serverImpl struct {
 func (s *serverImpl) Run() {
 
 	controller.NewAuthController(s.engine, s.usecase.GetAuthUsecase())
+	controller.NewWebSocketController(s.engine, s.usecase.GetPrivateUsecase(), s.usecase.GetAuthUsecase())
 
 	s.engine.Run(":8080")
 }
