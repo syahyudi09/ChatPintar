@@ -9,12 +9,14 @@ import (
 type RepositoryManager interface {
 	GetAuthRepo() repository.AuthRepository
 	GetPrivateRepo() repository.PrivateChatReposiotry
+	GetChatGroupRepo() repository.ChatGroupRepository
 }
 
 type repositoryManager struct {
 	infra    InfraManager
 	authRepo repository.AuthRepository
 	privateChatRepo repository.PrivateChatReposiotry
+	chatGroupRepo repository.ChatGroupRepository
 }
 
 func NewRepoManager(infra InfraManager) RepositoryManager {
@@ -25,6 +27,7 @@ func NewRepoManager(infra InfraManager) RepositoryManager {
 
 var onceLoadAuthRepo sync.Once
 var onceLoadPrivateChatrepo sync.Once
+var onceLoadChatGroupRepo sync.Once
 
 func (rm *repositoryManager) GetAuthRepo() repository.AuthRepository{
 	onceLoadAuthRepo.Do(func() {
@@ -39,4 +42,13 @@ func (rm *repositoryManager) GetPrivateRepo() repository.PrivateChatReposiotry{
 	})
 	return rm.privateChatRepo
 }
+
+func (rm *repositoryManager) GetChatGroupRepo() repository.ChatGroupRepository{
+	onceLoadChatGroupRepo.Do(func()  {
+		rm.chatGroupRepo = repository.NewChatGroupRepository(rm.infra.GetDB())
+	})
+	return rm.chatGroupRepo
+}
+
+
 

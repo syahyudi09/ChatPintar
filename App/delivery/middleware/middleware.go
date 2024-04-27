@@ -24,7 +24,7 @@ func JWTMiddleware() gin.HandlerFunc {
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
 		// Memvalidasi token
-		claims, err := token.ValidateToken(tokenString) 
+		claims, err := token.ValidateToken(tokenString)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token", "details": err.Error()})
 			c.Abort()

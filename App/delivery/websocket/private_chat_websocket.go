@@ -1,10 +1,11 @@
-package controller
+package websocket
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/syahyudi09/ChatPintar/App/config"
@@ -14,7 +15,7 @@ import (
 
 type WebSocketController struct {
 	privateChatUsecase usecase.PrivateChatUsecase
-	usecase usecase.AuthUsecase
+	usecase            usecase.AuthUsecase
 	connections        map[string]*websocket.Conn
 	mu                 sync.Mutex
 }
@@ -23,7 +24,7 @@ func NewWebSocketController(r *gin.Engine, privateChatUsecase usecase.PrivateCha
 	wsController := &WebSocketController{
 		privateChatUsecase: privateChatUsecase,
 		connections:        make(map[string]*websocket.Conn),
-		usecase: usecase,
+		usecase:            usecase,
 	}
 
 	r.GET("/ws", wsController.HandleWebSocket)
@@ -40,9 +41,9 @@ func (wsc *WebSocketController) HandleWebSocket(c *gin.Context) {
 	}
 
 	senderID := c.Query("user_id")
-	receiverID := c.Query("receiver_id") 
+	receiverID := c.Query("receiver_id")
 	fmt.Println("WebSocket connection initiated with user_id:", senderID)
-	if senderID == "" || receiverID == ""{
+	if senderID == "" || receiverID == "" {
 		ws.WriteMessage(websocket.TextMessage, []byte("Error: Missing user_id"))
 		ws.Close()
 		return
@@ -98,34 +99,34 @@ func (wsc *WebSocketController) HandleWebSocket(c *gin.Context) {
 		msg.SenderID = senderID
 		msg.ReceiverID = receiverID
 		msg.Status = model.Pending
-		fmt.Printf("Sending message to receiver_id: %s %s\n", msg.SenderID , senderID)
+		fmt.Printf("Sending message to receiver_id: %s %s\n", msg.SenderID, senderID)
 
 		// Simpan pesan ke database
 		if err := wsc.privateChatUsecase.CreateMessage(msg); err != nil {
-			ws.WriteMessage(websocket.TextMessage, []byte("Error creating message: " + err.Error()))
+			ws.WriteMessage(websocket.TextMessage, []byte("Error creating message: "+err.Error()))
 			continue
 		}
 
 		// Mengirim pesan ke penerima
 		wsc.mu.Lock()
-        if receiverConn, exists := wsc.connections[msg.ReceiverID]; exists {
-            err = receiverConn.WriteMessage(websocket.TextMessage, messageContent) // Mengirim pesan ke penerima
-            if err == nil {
-                msg.Status = model.Send// Jika pengiriman berhasil
-            } else {
-                msg.Status = model.Failed// Jika pengiriman gagal
-            }
-        } else {
-            msg.Status = model.Failed // Jika penerima tidak terhubung
-            ws.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("Error: Receiver with ID %s not connected", msg.ReceiverID)))
-        }
-        wsc.mu.Unlock()
-
-        err = wsc.privateChatUsecase.UpdateMessageStatusBySender(msg.SenderID, string(msg.Status))
-			if err != nil{
-				ws.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("Error updating message status: %v", err)))
-				continue
+		if receiverConn, exists := wsc.connections[msg.ReceiverID]; exists {
+			err = receiverConn.WriteMessage(websocket.TextMessage, messageContent) // Mengirim pesan ke penerima
+			if err == nil {
+				msg.Status = model.Send // Jika pengiriman berhasil
+			} else {
+				msg.Status = model.Failed // Jika pengiriman gagal
 			}
+		} else {
+			msg.Status = model.Failed // Jika penerima tidak terhubung
+			ws.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("Error: Receiver with ID %s not connected", msg.ReceiverID)))
+		}
+		wsc.mu.Unlock()
+
+		err = wsc.privateChatUsecase.UpdateMessageStatusBySender(msg.SenderID, string(msg.Status))
+		if err != nil {
+			ws.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("Error updating message status: %v", err)))
+			continue
+		}
 
 	}
 }

@@ -90,7 +90,7 @@ func NewAuthController(r *gin.Engine, usecase usecase.AuthUsecase) *AuthControll
 	auth := r.Group("/auth")
 
 	auth.POST("/register", controller.Register)
-	auth.POST("/login",controller.Login)
+	auth.POST("/login", controller.Login)
 
 	return &controller
-} 
+}
