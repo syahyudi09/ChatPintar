@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	// "github.com/syahyudi09/ChatPintar/App/helper"
 	"github.com/syahyudi09/ChatPintar/App/model"
 	"github.com/syahyudi09/ChatPintar/App/usecase"
 )
@@ -49,31 +48,42 @@ func (cgc *ChatGroupController) CreateGroup(c *gin.Context) {
 }
 
 func (cgc *ChatGroupController) AddUserGroup(c *gin.Context) {
-	// Mengambil parameter dari URL
-	groupId := c.Param("group_id") // Menggunakan `group_id` bukan `group_name`
+	groupId := c.Param("group_id")
 	adminNumber := c.Param("phone_number")
 
-	// Validasi input JSON
 	var input model.InputUserToGroup
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	// Menetapkan informasi anggota
 	input.AddPhoneNumber = adminNumber
 	input.GroupId = groupId
-	input.Role = model.Member // Menetapkan peran sebagai anggota biasa
+	input.Role = model.Member
 
-	// Menambahkan pengguna ke grup
 	err := cgc.chatGroup.AddUserToGroup(input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to add user to group: %v", err)})
 		return
 	}
 
-	// Respons sukses
 	c.JSON(http.StatusCreated, gin.H{"message": "Member added to group successfully"})
+}
+
+func (cgc *ChatGroupController) DeleteUsersGroup(c *gin.Context) {
+	var req model.InputDeleteUsersGroup
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		return
+	}
+
+	err := cgc.chatGroup.DeleteUserGrou(req.PhoneNumber, req.GroupID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
 
 func NewChatGroupController(r *gin.Engine, chatGroup usecase.ChatGroupUsecase) *ChatGroupController {
@@ -86,6 +96,7 @@ func NewChatGroupController(r *gin.Engine, chatGroup usecase.ChatGroupUsecase) *
 
 	group.POST("/create/:phone_number", controller.CreateGroup)
 	group.POST("/:group_id/:admin_number", controller.AddUserGroup)
+	group.DELETE("/delete", controller.DeleteUsersGroup)
 
 	return &controller
 }

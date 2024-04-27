@@ -42,7 +42,6 @@ func (ac *AuthController) Register(c *gin.Context) {
 		statusCode = http.StatusConflict
 		message = "PHONE_NUMBER_ALREADY_EXISTS"
 	} else {
-		// Jika pendaftaran berhasil, respons akan menampilkan pesan sukses dan data pengguna yang terdafta
 		if err := ac.usecase.Register(input); err != nil {
 			fmt.Println(err)
 			response := helper.APIResponse("FAILED_TO_REGISTER_USER", http.StatusBadRequest, "error", nil)
@@ -51,7 +50,6 @@ func (ac *AuthController) Register(c *gin.Context) {
 		}
 	}
 
-	// Berhasil melakukan register
 	response := helper.APIResponse(message, statusCode, "success", input)
 	c.JSON(http.StatusOK, response)
 }
@@ -76,7 +74,6 @@ func (ac *AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	// Jika proses login berhasil, fungsi akan memberikan respons dengan pesan sukses dan data pengguna yang berhasil login.
 	response := helper.APIResponse("SUCCESSFULLY_LOGIN", http.StatusOK, "success", result)
 	c.JSON(http.StatusOK, response)
 }

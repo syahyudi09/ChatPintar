@@ -12,6 +12,9 @@ import (
 type ChatGroupUsecase interface {
 	CreateGroup(input model.InputChatGroupModel) (string, error)
 	AddUserToGroup(input model.InputUserToGroup) error
+	DeleteUserGrou(phoneNumber, groupID string) error
+	CreateMessageGroup(message model.MessageGroup) error
+	IsUserMemberOfGroup(userID, groupID string) (bool, error)
 }
 
 type chatGroupUsecase struct {
@@ -50,6 +53,40 @@ func (cgu *chatGroupUsecase) AddUserToGroup(input model.InputUserToGroup) error 
 
 	return nil
 }
+
+func (cgu *chatGroupUsecase) CreateMessageGroup(message model.MessageGroup) error {
+	// Membuat ID pesan yang unik
+	message.MessageID = utils.UuidGenerate()
+
+	// Menyimpan pesan ke dalam database
+	if err := cgu.chatGroup.CreateMessageGroup(message); err != nil {
+		return fmt.Errorf("failed to create group message: %v", err)
+	}
+
+	return nil
+}
+
+func (cgu *chatGroupUsecase) DeleteUserGrou(phoneNumber, groupID string) error {
+	if phoneNumber == "" || groupID == "" {
+		return fmt.Errorf("phone number or group ID cannot be empty")
+	}
+
+	err := cgu.chatGroup.RemoveGroupUser(phoneNumber, groupID)
+	if err != nil {
+		return fmt.Errorf("failed to remove user from group: %v", err)
+	}
+
+	return nil
+}
+
+func (cgu *chatGroupUsecase) IsUserMemberOfGroup(userID, groupID string) (bool, error) {
+	if userID == "" || groupID == "" {
+		return false, fmt.Errorf("userID and groupID cannot be empty")
+	}
+
+	return cgu.chatGroup.CheckUserInGroup(userID, groupID)
+}
+
 func NewChatGroupUsecase(chatGroup repository.ChatGroupRepository) ChatGroupUsecase {
 	return &chatGroupUsecase{
 		chatGroup: chatGroup,

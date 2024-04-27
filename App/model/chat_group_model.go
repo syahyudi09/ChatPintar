@@ -37,3 +37,8 @@ type InputUserToGroup struct {
 	GroupId        string   `json:"group_id"`
 	Role           RoleEnum `json:"role"`
 }
+
+type InputDeleteUsersGroup struct {
+	PhoneNumber string `json:"phone_number"`
+	GroupID     string `json:"group_id"`
+}

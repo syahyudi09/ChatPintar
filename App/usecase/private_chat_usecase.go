@@ -11,7 +11,7 @@ import (
 
 type PrivateChatUsecase interface {
 	CreateMessage(input model.InputMessageModel) error
-	UpdateMessageStatusBySender(senderID string, newStatus string) error 
+	UpdateMessageStatusBySender(senderID string, newStatus string) error
 }
 
 type privateChatUsecase struct {
@@ -28,7 +28,6 @@ func (pcu *privateChatUsecase) CreateMessage(input model.InputMessageModel) erro
 
 	var chatID string
 	if existingChat == nil {
-		// Jika chat belum ada, buat chat baru
 		chatID = utils.UuidGenerate()
 		newChat := model.PrivateChatModel{
 			ChatId:    chatID,
@@ -37,7 +36,6 @@ func (pcu *privateChatUsecase) CreateMessage(input model.InputMessageModel) erro
 			CreatedAt: time.Now(),
 		}
 
-		// Buat chat baru
 		chatID, err = pcu.chat.CreateChat(newChat)
 		if err != nil {
 			return fmt.Errorf("failed to create chat: %w", err)
@@ -66,12 +64,12 @@ func (pcu *privateChatUsecase) CreateMessage(input model.InputMessageModel) erro
 }
 
 func (pcu *privateChatUsecase) UpdateMessageStatusBySender(senderID string, newStatus string) error {
-    err := pcu.chat.UpdateMessageStatusBySender(senderID, newStatus)
-    if err != nil {
-        return fmt.Errorf("failed to update message status: %w", err)
-    }
+	err := pcu.chat.UpdateMessageStatusBySender(senderID, newStatus)
+	if err != nil {
+		return fmt.Errorf("failed to update message status: %w", err)
+	}
 
-    return nil
+	return nil
 }
 
 func NewPrivateChatUsecase(chat repository.PrivateChatReposiotry, auth repository.AuthRepository) PrivateChatUsecase {

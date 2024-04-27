@@ -10,6 +10,7 @@ import (
 type ChatGroupRepository interface {
 	CreateGroup(newGroup model.GroupModel) error
 	CreateGroupUser(newGorupUsers model.GroupUsers) error
+	CreateMessageGroup(message model.MessageGroup) error
 	CheckUserInGroup(userID, groupID string) (bool, error)
 	RemoveGroupUser(userID, groupID string) error
 }
@@ -52,8 +53,6 @@ func (cgr *chatGroupRepository) RemoveGroupUser(phoneNumber, groupID string) err
 
 func (cgr *chatGroupRepository) CheckUserInGroup(userID, groupID string) (bool, error) {
 	var count int
-
-	// SQL untuk memeriksa apakah pengguna ada dalam grup
 	query := "SELECT COUNT(*) FROM group_users WHERE phone_number = $1 AND group_id = $2"
 
 	err := cgr.db.QueryRow(query, userID, groupID).Scan(&count)
@@ -63,6 +62,16 @@ func (cgr *chatGroupRepository) CheckUserInGroup(userID, groupID string) (bool, 
 
 	// Jika count > 0, berarti pengguna ada dalam grup
 	return count > 0, nil
+}
+
+func (cgr *chatGroupRepository) CreateMessageGroup(message model.MessageGroup) error {
+	insertQuery := "INSERT INTO message_groups (message_id, group_id, sender_id, message_content, created_at) VALUES ($1, $2, $3, $4, $5)"
+	_, err := cgr.db.Exec(insertQuery, message.MessageID, message.GroupId, message.SenderID, message.MessageContent, message.CreatedAt)
+	if err != nil {
+		return fmt.Errorf("failed to create message: %v", err)
+	}
+
+	return nil
 }
 
 func NewChatGroupRepository(db *sql.DB) ChatGroupRepository {
